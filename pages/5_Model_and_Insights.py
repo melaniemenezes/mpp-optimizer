@@ -62,31 +62,41 @@ if best:
 else:
     st.write("—")
 
-# --------------------------------------------------------- interpretability
+# --------------------------------------------------- characterise a readout
+st.divider()
+st.subheader("Characterise a readout")
+st.caption("Pick any measured output (e.g. a diffusion metric) to see which inputs drive it, "
+           "how it responds to each, and how well the model predicts it.")
 if len(completed) < MIN_POINTS_FOR_MODEL:
-    st.info(f"Add at least {MIN_POINTS_FOR_MODEL} completed experiments to unlock sensitivity analysis "
-            f"and predicted-vs-observed (currently {len(completed)}).")
+    st.info(f"Add at least {MIN_POINTS_FOR_MODEL} completed experiments to unlock this analysis "
+            f"(currently {len(completed)}).")
     st.stop()
 
-with st.spinner("Fitting interpretability model…"):
-    sens = opt.sensitivities(records)
-    pvo = opt.predicted_vs_observed(records)
+readout_options = opt.available_readouts(records)
+if not readout_options:
+    st.info("No numeric readouts recorded yet.")
+    st.stop()
+target = st.selectbox("Readout to analyse", readout_options, index=0)
 
-st.subheader(f"Factor sensitivity for `{sens['objective']}`")
+with st.spinner("Fitting model…"):
+    sens = opt.sensitivities(records, readout=target)
+    pvo = opt.predicted_vs_observed(records, readout=target)
+
+st.markdown(f"#### Factor sensitivity for `{sens['readout']}`")
 imp = sens["importances"]
 if imp:
     idf = pd.DataFrame(sorted(imp.items(), key=lambda kv: kv[1]), columns=["factor", "importance"])
     st.plotly_chart(px.bar(idf, x="importance", y="factor", orientation="h"), width="stretch")
-    st.caption("Relative importance from the GP's ARD lengthscales — how strongly each factor moves the objective.")
+    st.caption("Relative importance from the GP's ARD lengthscales — how strongly each input moves this readout.")
 
-st.subheader("Partial dependence (top factors)")
+st.markdown("#### Partial dependence (top factors)")
 pds = sens["partial_dependence"]
 if pds:
     cols = st.columns(min(2, len(pds)))
     for i, (dim, curve) in enumerate(pds.items()):
-        fig = px.line(x=curve["x"], y=curve["y"], labels={"x": dim, "y": sens["objective"]})
+        fig = px.line(x=curve["x"], y=curve["y"], labels={"x": dim, "y": sens["readout"]})
         cols[i % len(cols)].plotly_chart(fig, width="stretch")
-    st.caption("Predicted objective as each factor varies with the others held at their mean.")
+    st.caption("Predicted readout as each input varies with the others held at their mean.")
 
 st.subheader(f"Predicted vs observed — `{pvo['readout']}` (leave-one-out)")
 if pvo["obs"]:

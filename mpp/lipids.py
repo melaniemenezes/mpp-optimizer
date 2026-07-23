@@ -32,6 +32,7 @@ SEED_LIPIDS: List[LipidDef] = [
     {"name": "DMG-PEG2000", "category": "peg", "full_name": "1,2-dimyristoyl-rac-glycero-3-PEG2000", "notes": "Shed-able PEG used in LNPs."},
     {"name": "DSPE-PEG5000", "category": "peg", "full_name": "DSPE-PEG5000", "notes": "Longer PEG; denser brush."},
     {"name": "DSPE-PEG1000", "category": "peg", "full_name": "DSPE-PEG1000", "notes": "Shorter PEG."},
+    {"name": "mPEG", "category": "peg", "full_name": "Methoxy-poly(ethylene glycol) lipid (mPEG-lipid)", "notes": "Stealth PEG coating; muco-inert surface."},
     # --- helper / fusogenic ---
     {"name": "DOPE", "category": "helper", "full_name": "1,2-dioleoyl-sn-glycero-3-phosphoethanolamine", "notes": "Fusogenic helper lipid."},
     {"name": "DSPE", "category": "helper", "full_name": "1,2-distearoyl-sn-glycero-3-phosphoethanolamine", "notes": "PE helper lipid."},

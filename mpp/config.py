@@ -26,6 +26,12 @@ STANDARD_READOUTS = [
     ("zeta_mv", "mV", "target", "Zeta potential; near 0 mV favours muco-inert behaviour."),
     ("encapsulation_pct", "%", "max", "Encapsulation efficiency of the cargo."),
     ("cargo_retention", "%", "max", "Cargo retained after incubation (stability)."),
+    # --- multiple-particle-tracking (MPT) diffusion metrics in mucin ---
+    ("D_mucin_um2s", "um2/s", "max", "Diffusion coefficient in mucin from tracks longer than 5 s."),
+    ("D1_brownian", "um2/s", "max", "D1 at 1 s (Brownian-motion / linear-MSD model)."),
+    ("Dalpha_10s", "um2/s", "max", "D-alpha at 10 s (non-linear / anomalous-MSD model)."),
+    ("alpha_exponent", "", "max", "Anomalous diffusion exponent alpha (~1 free, <1 hindered/subdiffusive)."),
+    ("net_to_path", "", "max", "Net-to-path (straightness) displacement ratio; ->1 directed, ->0 confined."),
 ]
 
 # File-type buckets for attachment preview.

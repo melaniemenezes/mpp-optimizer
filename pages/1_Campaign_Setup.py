@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from mpp import service
-from mpp.benchmark import make_demo_campaign
+from mpp.benchmark import make_demo_campaign, make_diffusion_study_campaign
 from mpp.config import STANDARD_READOUTS
 from mpp.schema import (
     CampaignConfig,
@@ -25,12 +25,24 @@ lipid_names = [l["name"] for l in lipids]
 lipid_cat = {l["name"]: l["category"] for l in lipids}
 
 # ----------------------------------------------------------------- quick start
-with st.expander("⚡ Quick start: load the synthetic demo campaign", expanded=False):
-    st.write("Creates a ready-made DSPC / Cholesterol / PEG / DOTAP campaign you can immediately use.")
-    if st.button("Create demo campaign"):
-        cid = service.create_campaign(make_demo_campaign())
-        st.session_state["campaign_id"] = cid
-        st.success(f"Created demo campaign #{cid}. Open **Suggest Experiments** next.")
+with st.expander("⚡ Quick start: load a ready-made campaign", expanded=False):
+    qc1, qc2 = st.columns(2)
+    with qc1:
+        st.markdown("**Diffusion study** — the 5-lipid spec")
+        st.caption("DDAB / DSPG / HSPC / Cholesterol / mPEG molar ratios + size + zeta as inputs; "
+                   "MPT diffusion metrics (D, D1, Dalpha, alpha, net-to-path) as outputs.")
+        if st.button("Create diffusion-study campaign"):
+            cid = service.create_campaign(make_diffusion_study_campaign())
+            st.session_state["campaign_id"] = cid
+            st.success(f"Created diffusion-study campaign #{cid}. Enter data on **Upload Results**, "
+                       f"then characterise each output on **Model & Insights**.")
+    with qc2:
+        st.markdown("**Generic demo** — optimizer example")
+        st.caption("DSPC / Cholesterol / PEG / DOTAP campaign for the formulation-optimization demo.")
+        if st.button("Create demo campaign"):
+            cid = service.create_campaign(make_demo_campaign())
+            st.session_state["campaign_id"] = cid
+            st.success(f"Created demo campaign #{cid}. Open **Suggest Experiments** next.")
 
 st.divider()
 st.subheader("Create a new campaign")
@@ -61,7 +73,9 @@ comp_edit = st.data_editor(
 )
 
 # ---- process params ----
-st.markdown("##### 2. Process parameters")
+st.markdown("##### 2. Process parameters & input features")
+st.caption("Manufacturing knobs (e.g. flow ratio) **and** measured physicochemical properties used "
+           "as model inputs (e.g. liposome size, zeta potential).")
 proc_df = pd.DataFrame([
     {"name": "total_lipid_conc", "low": 1.0, "high": 20.0, "unit": "mg/mL"},
     {"name": "flow_ratio", "low": 1.0, "high": 5.0, "unit": "aq:org"},

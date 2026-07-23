@@ -303,14 +303,38 @@ class MPPOptimizer:
             ls = np.repeat(ls, self.dim)
         return ls
 
-    def sensitivities(self, records: Sequence[Record]) -> dict:
-        completed = [r for r in records if self.is_complete(r)]
-        if len(completed) < config.MIN_POINTS_FOR_MODEL or self.dim == 0:
-            return {"importances": {}, "partial_dependence": {}, "objective": None,
+    def _records_with_readout(self, records: Sequence[Record], key: str) -> List[Record]:
+        return [r for r in records if _num((r.get("readouts", {}) or {}).get(key)) is not None]
+
+    def available_readouts(self, records: Sequence[Record]) -> List[str]:
+        """Readout keys present (numeric) in the data — objectives first, then the rest."""
+        keys = set()
+        for r in records:
+            for k, v in (r.get("readouts", {}) or {}).items():
+                if _num(v) is not None:
+                    keys.add(k)
+        obj = [o.readout for o in self.objectives]
+        rest = sorted(k for k in keys if k not in obj)
+        return [k for k in obj if k in keys] + rest
+
+    def _default_readout(self, readout: Optional[str]) -> Optional[str]:
+        if readout:
+            return readout
+        return self.objectives[0].readout if self.objectives else None
+
+    def sensitivities(self, records: Sequence[Record], readout: Optional[str] = None) -> dict:
+        """Which input factors drive a readout (ARD importances) + partial-dependence curves.
+
+        `readout` selects the output to characterise; defaults to the first objective.
+        Curves and importances are in the readout's own units (raw predicted value).
+        """
+        target = self._default_readout(readout)
+        completed = self._records_with_readout(records, target) if target else []
+        if target is None or len(completed) < config.MIN_POINTS_FOR_MODEL or self.dim == 0:
+            return {"importances": {}, "partial_dependence": {}, "readout": target,
                     "note": "Need more completed experiments to fit the interpretability model."}
-        o = self.objectives[0]
         Uobs = self._to_unit(np.array([self._encode(r) for r in completed]))
-        y = np.array([self._obj_loss(o, _num((r.get("readouts", {}) or {}).get(o.readout))) for r in completed])
+        y = np.array([_num((r.get("readouts", {}) or {}).get(target)) for r in completed], dtype=float)
         gp = self._fit_gp(Uobs, y)
         ls = self._lengthscales(gp)
         inv = 1.0 / np.maximum(ls, 1e-6)
@@ -325,24 +349,23 @@ class MPPOptimizer:
             Ug[:, d] = grid
             mu = gp.predict(Ug)
             xvals = self.lows[d] + grid * (self.highs[d] - self.lows[d])
-            yvals = -mu if o.direction == "max" else mu  # back to readout sense
-            pd[self.dim_names[d]] = {"x": xvals.tolist(), "y": yvals.tolist()}
-        return {"importances": importances, "partial_dependence": pd, "objective": o.readout}
+            pd[self.dim_names[d]] = {"x": xvals.tolist(), "y": mu.tolist()}  # raw readout units
+        return {"importances": importances, "partial_dependence": pd, "readout": target}
 
-    def predicted_vs_observed(self, records: Sequence[Record]) -> dict:
-        completed = [r for r in records if self.is_complete(r)]
-        o = self.objectives[0]
-        if len(completed) < config.MIN_POINTS_FOR_MODEL:
-            return {"obs": [], "pred": [], "readout": o.readout}
+    def predicted_vs_observed(self, records: Sequence[Record], readout: Optional[str] = None) -> dict:
+        target = self._default_readout(readout)
+        completed = self._records_with_readout(records, target) if target else []
+        if target is None or len(completed) < config.MIN_POINTS_FOR_MODEL:
+            return {"obs": [], "pred": [], "readout": target}
         Uobs = self._to_unit(np.array([self._encode(r) for r in completed]))
-        y = np.array([_num((r.get("readouts", {}) or {}).get(o.readout)) for r in completed], dtype=float)
+        y = np.array([_num((r.get("readouts", {}) or {}).get(target)) for r in completed], dtype=float)
         preds = np.zeros(len(y))
         for i in range(len(y)):  # leave-one-out
             mask = np.ones(len(y), dtype=bool)
             mask[i] = False
             gp = self._fit_gp(Uobs[mask], y[mask])
             preds[i] = gp.predict(Uobs[i : i + 1])[0]
-        return {"obs": y.tolist(), "pred": preds.tolist(), "readout": o.readout}
+        return {"obs": y.tolist(), "pred": preds.tolist(), "readout": target}
 
 
 def build_optimizer(campaign: Union[CampaignConfig, dict], rng_seed: int = 0) -> MPPOptimizer:

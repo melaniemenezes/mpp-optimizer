@@ -64,7 +64,7 @@ with st.form(f"entry_{ctx}"):
 
     process = {}
     if cfg.process_params:
-        st.markdown("**Process parameters**")
+        st.markdown("**Process parameters & input features**")
         proc_cols = st.columns(min(4, len(cfg.process_params)))
         for idx, p in enumerate(cfg.process_params):
             col = proc_cols[idx % len(proc_cols)]

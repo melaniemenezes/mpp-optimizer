@@ -75,6 +75,74 @@ def simulate(composition: Dict[str, float], process: Dict[str, float],
     return {k: round(v, 4) for k, v in out.items()}
 
 
+def simulate_diffusion(composition: Dict[str, float], process: Dict[str, float],
+                       rng: Optional[np.random.Generator] = None, noise: bool = True) -> Dict[str, float]:
+    """Synthetic multiple-particle-tracking (MPT) readouts for the diffusion-study campaign.
+
+    Inputs follow the professor's spec: the 5-lipid composition PLUS liposome size and zeta as
+    *input features*. Mobility in mucin is highest for small, near-neutral, PEGylated particles;
+    large or highly charged particles get stuck (subdiffusive, low straightness).
+    """
+    f_peg = float(composition.get("mPEG", 0.0))
+    size = float(process.get("size_nm", 120.0))
+    zeta = float(process.get("zeta_mv", 0.0))
+
+    size_term = math.exp(-max(0.0, size - 50.0) / 220.0)   # smaller ~ better
+    charge_term = math.exp(-(zeta / 25.0) ** 2)            # near-neutral ~ better
+    peg_term = 0.35 + 0.65 * (f_peg / (f_peg + 0.03))      # more PEG ~ better
+    m = size_term * charge_term * peg_term                 # overall mobility in [0, 1]
+
+    D = 0.005 + 1.4 * m                 # D (tracks > 5 s), um^2/s
+    D1 = D * (1.0 + 0.4 * (1.0 - m))    # short-time (1 s) looks a bit faster when hindered
+    Dalpha = D * (0.55 + 0.45 * m)      # long-time (10 s) generalized coefficient
+    alpha = 0.35 + 0.65 * m             # ~1 free, <1 subdiffusive
+    ntp = 0.05 + 0.55 * m               # net-to-path straightness
+
+    out = {"D_mucin_um2s": D, "D1_brownian": D1, "Dalpha_10s": Dalpha,
+           "alpha_exponent": alpha, "net_to_path": ntp}
+    if noise and rng is not None:
+        scales = {"D_mucin_um2s": 0.05, "D1_brownian": 0.05, "Dalpha_10s": 0.05,
+                  "alpha_exponent": 0.03, "net_to_path": 0.03}
+        out = {k: v + rng.normal(0.0, scales[k]) for k, v in out.items()}
+    out["D_mucin_um2s"] = float(max(0.0, out["D_mucin_um2s"]))
+    out["D1_brownian"] = float(max(0.0, out["D1_brownian"]))
+    out["Dalpha_10s"] = float(max(0.0, out["Dalpha_10s"]))
+    out["alpha_exponent"] = float(np.clip(out["alpha_exponent"], 0.1, 1.2))
+    out["net_to_path"] = float(np.clip(out["net_to_path"], 0.0, 1.0))
+    return {k: round(v, 4) for k, v in out.items()}
+
+
+def make_diffusion_study_campaign() -> CampaignConfig:
+    """The professor's spec: 5-lipid molar ratios + size + zeta as inputs; MPT diffusion outputs.
+
+    Size and zeta are modelled as input *features* (process parameters), matching the request to
+    "use the formulation and physicochemical properties as inputs" to characterise diffusion.
+    HSPC is the structural/filler lipid (absorbs the remaining mole fraction).
+    """
+    return CampaignConfig(
+        name="MPP mucin-diffusion study (5-lipid, size+zeta inputs)",
+        description="Inputs: DDAB / DSPG / HSPC / Cholesterol / mPEG molar ratios + liposome size + "
+                    "zeta potential. Outputs: D (>5 s), D1 (1 s), Dalpha (10 s), alpha, net-to-path.",
+        components=[
+            ComponentSpec(lipid="HSPC", is_filler=True),          # structural remainder
+            ComponentSpec(lipid="DDAB", low=0.0, high=0.30),       # cationic
+            ComponentSpec(lipid="DSPG", low=0.0, high=0.30),       # anionic
+            ComponentSpec(lipid="Cholesterol", low=0.0, high=0.60),
+            ComponentSpec(lipid="mPEG", low=0.0, high=0.10),       # stealth PEG
+        ],
+        process_params=[  # physicochemical properties used as input features
+            ProcessParamSpec(name="size_nm", low=30.0, high=500.0, unit="nm"),
+            ProcessParamSpec(name="zeta_mv", low=-60.0, high=60.0, unit="mV"),
+        ],
+        objectives=[
+            ObjectiveSpec(readout="D_mucin_um2s", direction="max", weight=1.0),
+            ObjectiveSpec(readout="alpha_exponent", direction="max", weight=1.0),
+            ObjectiveSpec(readout="net_to_path", direction="max", weight=0.5),
+        ],
+        constraints=[],
+    )
+
+
 def make_demo_campaign() -> CampaignConfig:
     """A representative MPP optimization problem used by the seed script and tests."""
     return CampaignConfig(

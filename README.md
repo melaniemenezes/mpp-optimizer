@@ -66,6 +66,31 @@ care about (mucus penetration, cargo retention, size, low polydispersity, near-n
 
 ---
 
+## Preconfigured study: mucin-diffusion characterisation
+
+The app ships with a ready-made campaign matching a specific study design — mapping liposome
+formulation + physicochemical properties to particle mobility in mucin (from multiple-particle
+tracking, MPT):
+
+- **Input features (7):** `DDAB`, `DSPG`, `HSPC`, `Cholesterol`, `mPEG` molar ratios (HSPC is the
+  structural/filler lipid) **plus** liposome `size_nm` and `zeta_mv` as measured input features.
+- **Diffusion outputs (5):**
+  - `D_mucin_um2s` — diffusion coefficient in mucin from tracks > 5 s (µm²/s)
+  - `D1_brownian` — D₁ at 1 s (Brownian / linear-MSD model)
+  - `Dalpha_10s` — Dα at 10 s (non-linear / anomalous-MSD model)
+  - `alpha_exponent` — anomalous exponent α (≈1 free diffusion, <1 hindered/subdiffusive)
+  - `net_to_path` — net-to-path (straightness) ratio (→1 directed, →0 confined)
+
+The aim is to **characterise and distinguish particle mobility**: on **Model & Insights**, pick any
+diffusion output to see which inputs drive it (ARD importances), how it responds (partial
+dependence), and how well it's predicted (leave-one-out). Create it from **Campaign Setup → Quick
+start → Create diffusion-study campaign**, or seed synthetic data with
+`python scripts/seed_diffusion_demo.py`.
+
+> Because size and zeta are consequences of the formulation, using them as inputs suits a
+> *characterisation* model. To *design* new formulations you'd additionally predict size/zeta from
+> composition — a straightforward extension.
+
 ## Quickstart
 
 Requires **Python 3.9+**. From the project root:
