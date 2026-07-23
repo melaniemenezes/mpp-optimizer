@@ -75,4 +75,5 @@ with st.container(border=True):
    (which inputs drive each output, partial dependence, predicted-vs-observed).
         """
     )
-    st.caption("New here? Open the **Help** page in the sidebar for the science and a full walkthrough.")
+    st.caption("New here? Generate the full project guide PDF with `python scripts/make_guide_pdf.py` "
+               "— the science, the algorithm explained from scratch, and a walkthrough.")

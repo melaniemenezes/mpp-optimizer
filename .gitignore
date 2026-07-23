@@ -5,3 +5,5 @@ data/mpp.db
 data/attachments/
 .pytest_cache/
 .DS_Store
+docs/_figs/
+docs/*.pdf
