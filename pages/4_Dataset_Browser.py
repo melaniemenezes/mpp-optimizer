@@ -6,12 +6,12 @@ import pandas as pd
 import streamlit as st
 
 from mpp import service, storage
-from mpp.ui import composition_summary, require_campaign
+from mpp.ui import apply_theme, composition_summary, page_header, require_campaign
 
 st.set_page_config(page_title="Dataset · MPP", page_icon="🧫", layout="wide")
+apply_theme()
 camp = require_campaign()
-st.title("Dataset Browser")
-st.caption(f"Campaign: **{camp['config'].name}**")
+page_header("Dataset Browser", f"Campaign: {camp['config'].name}", icon="🗂️")
 
 df = service.experiments_dataframe(camp["id"])
 if df.empty:

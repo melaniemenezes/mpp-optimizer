@@ -4,13 +4,13 @@ import streamlit as st
 from mpp import service, storage
 from mpp.config import STANDARD_READOUTS
 from mpp.schema import ExperimentRecord
-from mpp.ui import composition_summary, require_campaign
+from mpp.ui import apply_theme, composition_summary, page_header, require_campaign
 
 st.set_page_config(page_title="Upload Results · MPP", page_icon="🧫", layout="wide")
+apply_theme()
 camp = require_campaign()
 cfg = camp["config"]
-st.title("Upload Results")
-st.caption(f"Campaign: **{cfg.name}**")
+page_header("Upload Results", f"Campaign: {cfg.name}", icon="⬆️")
 
 READOUT_UNITS = {r[0]: r[1] for r in STANDARD_READOUTS}
 ALL_READOUTS = [r[0] for r in STANDARD_READOUTS]

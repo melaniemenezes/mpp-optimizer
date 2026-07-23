@@ -12,11 +12,12 @@ from mpp.schema import (
     ObjectiveSpec,
     ProcessParamSpec,
 )
-from mpp.ui import ensure_init
+from mpp.ui import apply_theme, ensure_init, page_header
 
 st.set_page_config(page_title="Campaign Setup · MPP", page_icon="🧫", layout="wide")
+apply_theme()
 ensure_init()
-st.title("Campaign Setup")
+page_header("Campaign Setup", "Define the lipids, input features, objectives and constraints for a campaign.", icon="🧪")
 
 READOUT_NAMES = [r[0] for r in STANDARD_READOUTS]
 READOUT_DEFAULT_DIR = {r[0]: r[2] for r in STANDARD_READOUTS}

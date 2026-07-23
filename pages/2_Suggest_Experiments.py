@@ -5,13 +5,13 @@ import streamlit as st
 from mpp import service
 from mpp.optimizer import build_optimizer
 from mpp.schema import ExperimentRecord
-from mpp.ui import require_campaign
+from mpp.ui import apply_theme, page_header, require_campaign
 
 st.set_page_config(page_title="Suggest · MPP", page_icon="🧫", layout="wide")
+apply_theme()
 camp = require_campaign()
 cfg = camp["config"]
-st.title("Suggest Experiments")
-st.caption(f"Campaign: **{cfg.name}**")
+page_header("Suggest Experiments", f"Campaign: {cfg.name}", icon="✨")
 
 records = service.records_for_optimizer(camp["id"])
 opt = build_optimizer(cfg, rng_seed=42)

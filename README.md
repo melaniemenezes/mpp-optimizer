@@ -63,6 +63,10 @@ care about (mucus penetration, cargo retention, size, low polydispersity, near-n
 - 📈 **Model & insights** — the **Pareto trade-off front**, the recommended best compositions,
   **factor sensitivity** (which lipids/params matter most), **partial-dependence** curves, and a
   leave-one-out **predicted-vs-observed** fit.
+- ❓ **Help page** — the science, a full walkthrough, the configured study, and an FAQ, built in.
+
+The interface uses a **shadcn/ui-inspired theme** (Inter, neutral-zinc palette, bordered rounded
+cards) applied to Streamlit's native widgets via a global stylesheet (`mpp/ui.py` + `.streamlit/config.toml`).
 
 ---
 
